@@ -131,7 +131,12 @@ class AblationMarginVisualizerWidget:
     self.colorMapSelector.setMRMLScene( slicer.mrmlScene )
     visualizationFormLayout.addRow("Color Table: ", self.colorMapSelector)
 
-    self.colorMapSelector.connect("currentNodeChanged(vtkMRMLNode*)", self.onColorTableSelect)
+    self.colorMapSelector.connect('currentNodeChanged(vtkMRMLNode*)', self.onColorTableSelect)
+
+    self.colorRangeWidget = slicer.qMRMLRangeWidget()
+    self.colorRangeWidget.setToolTip("Set color range")
+    visualizationFormLayout.addRow("Color Range: ", self.colorRangeWidget)
+    self.colorRangeWidget.connect('valuesChanged(double, double)', self.updateColorRange)
 
     self.showScaleButton = qt.QCheckBox()
     self.showScaleButton.setText('Show Scale')
@@ -151,13 +156,13 @@ class AblationMarginVisualizerWidget:
     ## Create a scale
     self.scalarBarWidget = vtk.vtkScalarBarWidget()
     actor = self.scalarBarWidget.GetScalarBarActor()
-    actor.SetOrientationToVertical();
-    actor.SetNumberOfLabels(11);
-    actor.SetTitle("");
-    actor.SetLabelFormat(" %#8.3f");
-    actor.SetPosition(0.1, 0.1);
-    actor.SetWidth(0.1);
-    actor.SetHeight(0.8);
+    actor.SetOrientationToVertical()
+    actor.SetNumberOfLabels(11)
+    actor.SetTitle("")
+    actor.SetLabelFormat(" %#8.3f")
+    actor.SetPosition(0.1, 0.1)
+    actor.SetWidth(0.1)
+    actor.SetHeight(0.8)
     self.scalarBarWidget.SetEnabled(0)    
 
     layout = slicer.app.layoutManager()
@@ -175,6 +180,14 @@ class AblationMarginVisualizerWidget:
   def onColorTableSelect(self):
     self.adjustScalarBar()
     self.forceRender()
+
+  def updateColorRange(self, min, max):
+    print("updateColorRange()")
+    probeModel = self.outputModelSelector.currentNode()
+    if probeModel:
+      dnode = probeModel.GetDisplayNode()
+      dnode.SetScalarRange(min, max)
+      self.adjustScalarBar()
 
   def generateDistanceMap(self):
     print("Generating distance map.")
@@ -214,10 +227,14 @@ class AblationMarginVisualizerWidget:
       dnode.SetAutoScalarRange(0)   ## Turn off auto scalar range
       dnode.SetActiveScalarName('NRRDImage')
       dnode.SetScalarVisibility(1)
+      #r = dnode.GetScalarRange()
+      #self.colorRangeWidget.updateSpinBoxRange(r[0], r[1])
+
       slicer.mrmlScene.RemoveNode(self.distanceMapNode)
       self.distanceMapNode = None
       self.adjustScalarBar()
       self.forceRender()
+
       
   def onShowScaleButton(self):
     logic = AblationMarginVisualizerLogic()
@@ -227,7 +244,7 @@ class AblationMarginVisualizerWidget:
       self.enableScalarBar(0)
       
   def enableScalarBar(self, s):
-    self.scalarBarWidget.SetEnabled(s);
+    self.scalarBarWidget.SetEnabled(s)
     if s:
       self.adjustScalarBar()
     self.forceRender()
@@ -237,11 +254,12 @@ class AblationMarginVisualizerWidget:
     probeModel = self.outputModelSelector.currentNode()
     if colorNode and probeModel:
       dnode = probeModel.GetDisplayNode()
-      r = dnode.GetScalarRange();
+      r = dnode.GetScalarRange()
       colorNode.GetLookupTable().SetRange(r[0], r[1])
-      dnode.SetAndObserveColorNodeID(colorNode.GetID());
+      dnode.SetAndObserveColorNodeID(colorNode.GetID())
       self.scalarBarWidget.GetScalarBarActor().SetLookupTable(colorNode.GetLookupTable())
       self.scalarBarWidget.GetScalarBarActor().Modified()
+      
     
   def forceRender(self):
     layout = slicer.app.layoutManager()
