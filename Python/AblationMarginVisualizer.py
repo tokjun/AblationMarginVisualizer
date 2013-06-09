@@ -183,7 +183,6 @@ class AblationMarginVisualizerWidget:
     self.forceRender()
 
   def updateColorRange(self, min, max):
-    print("updateColorRange()")
     probeModel = self.outputModelSelector.currentNode()
     if probeModel:
       dnode = probeModel.GetDisplayNode()
@@ -192,7 +191,6 @@ class AblationMarginVisualizerWidget:
 
   def generateDistanceMap(self):
     print("Generating distance map.")
-
     ## Create an scalar volume node for distance map
     self.distanceMapNode = slicer.vtkMRMLScalarVolumeNode()
     slicer.mrmlScene.AddNode(self.distanceMapNode)
@@ -249,12 +247,10 @@ class AblationMarginVisualizerWidget:
     self.forceRender()
 
   def adjustScalarBar(self):
-    print('adjustScalarBar is called')
     probeModel = self.outputModelSelector.currentNode()
     if probeModel:
       dnode = probeModel.GetDisplayNode()
       r = dnode.GetScalarRange()
-      print ('range = [%f,  %f]' % (r[0], r[1]))
       self.colorRangeWidget.setValues(r[0], r[1])
 
       colorNode = self.colorMapSelector.currentNode()
