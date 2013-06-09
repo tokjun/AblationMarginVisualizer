@@ -133,7 +133,8 @@ class AblationMarginVisualizerWidget:
 
     self.colorMapSelector.connect('currentNodeChanged(vtkMRMLNode*)', self.onColorTableSelect)
 
-    self.colorRangeWidget = slicer.qMRMLRangeWidget()
+    #self.colorRangeWidget = slicer.qMRMLRangeWidget()
+    self.colorRangeWidget = ctk.ctkRangeWidget()
     self.colorRangeWidget.setToolTip("Set color range")
     visualizationFormLayout.addRow("Color Range: ", self.colorRangeWidget)
     self.colorRangeWidget.connect('valuesChanged(double, double)', self.updateColorRange)
@@ -212,7 +213,7 @@ class AblationMarginVisualizerWidget:
       probeModel = self.outputModelSelector.currentNode()
       parameters["InputVolume"] = self.distanceMapNode.GetID()
       parameters["InputModel"] = probeModel.GetID()
-      parameters["outputModel"] = probeModel.GetID()
+      parameters["OutputModel"] = probeModel.GetID()
       probe = slicer.modules.probevolumewithmodel
       cliNode = slicer.cli.run(probe, None, parameters)
       cliNode.AddObserver('ModifiedEvent', self.postSetting)
@@ -227,11 +228,9 @@ class AblationMarginVisualizerWidget:
       dnode.SetAutoScalarRange(0)   ## Turn off auto scalar range
       dnode.SetActiveScalarName('NRRDImage')
       dnode.SetScalarVisibility(1)
-      #r = dnode.GetScalarRange()
-      #self.colorRangeWidget.updateSpinBoxRange(r[0], r[1])
-
       slicer.mrmlScene.RemoveNode(self.distanceMapNode)
       self.distanceMapNode = None
+
       self.adjustScalarBar()
       self.forceRender()
 
@@ -250,17 +249,21 @@ class AblationMarginVisualizerWidget:
     self.forceRender()
 
   def adjustScalarBar(self):
-    colorNode = self.colorMapSelector.currentNode()
+    print('adjustScalarBar is called')
     probeModel = self.outputModelSelector.currentNode()
-    if colorNode and probeModel:
+    if probeModel:
       dnode = probeModel.GetDisplayNode()
       r = dnode.GetScalarRange()
-      colorNode.GetLookupTable().SetRange(r[0], r[1])
-      dnode.SetAndObserveColorNodeID(colorNode.GetID())
-      self.scalarBarWidget.GetScalarBarActor().SetLookupTable(colorNode.GetLookupTable())
-      self.scalarBarWidget.GetScalarBarActor().Modified()
-      
-    
+      print ('range = [%f,  %f]' % (r[0], r[1]))
+      self.colorRangeWidget.setValues(r[0], r[1])
+
+      colorNode = self.colorMapSelector.currentNode()
+      if colorNode: 
+        colorNode.GetLookupTable().SetRange(r[0], r[1])
+        dnode.SetAndObserveColorNodeID(colorNode.GetID())
+        self.scalarBarWidget.GetScalarBarActor().SetLookupTable(colorNode.GetLookupTable())
+        self.scalarBarWidget.GetScalarBarActor().Modified()
+
   def forceRender(self):
     layout = slicer.app.layoutManager()
     renderer = layout.activeThreeDRenderer()
